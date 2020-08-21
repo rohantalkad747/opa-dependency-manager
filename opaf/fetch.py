@@ -56,15 +56,15 @@ class Artifact:
 
     def with_repo(self, repo):
         af_path = "artifactory/" + repo + "/" + self.artifact_path
-        return "https://$ARTIFACTORY_USERNAME_READONLY:$ARTIFACTORY_PASSWORD_READONLY@af.cds.bns/%s" % af_path
+        return "https://${ARTIFACTORY_SERVER_HOSTNAME}:${ARTIFACTORY_SERVER_PORT}/%s" % af_path
 
 
-def install_from_requirements_file(path_to_dependencies):
+def install_artifacts_from_requirements_file(path_to_dependencies):
     repos, requirements = parse_requirements_file(path_to_dependencies)
     for name, version in requirements:
         opa_package_path = get_opa_package_path(name, version)
         artifact = Artifact(name, version)
-        install(artifact, opa_package_path, repos)
+        install_artifact(artifact, opa_package_path, repos)
 
 
 def parse_requirements_file(path_to_dependencies):
@@ -74,13 +74,14 @@ def parse_requirements_file(path_to_dependencies):
     return repos, requirements
 
 
-def install(artifact, site_package_path, repos):
+def install_artifact(artifact, site_package_path, repos):
     artifact_downloaded = download(artifact, repos, site_package_path)
     if artifact_downloaded:
         extract_artifact(site_package_path)
     else:
-        logging.warning(
-            "Could not find artifact with path %s in any of the given repositories" % artifact.artifact_path)
+        logger.warning(
+            "Could not find artifact with path %s in any of the given repositories" % artifact.artifact_path
+        )
 
 
 def extract_artifact(site_package_path):
@@ -109,7 +110,7 @@ def try_downloading_from_this_repo(artifact, repo, site_package_tar_dump_path):
         artifactory_url = artifact.with_repo(repo)
         return download_to_path(artifactory_url, site_package_tar_dump_path)
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         return False
 
 
@@ -169,21 +170,32 @@ def build_arg_parser(args):
     return parser
 
 
-def start_package_install(parsed_args):
+def install_package(parsed_args):
     if not parsed_args.read:
-        install_from_requirements_file(parsed_args.read)
+        install_artifacts_from_requirements_file(parsed_args.read)
     else:
         name, version, repo = parsed_args.id, parsed_args.version, parsed_args.repo
         opa_package_path = get_opa_package_path(name, version)
         artifact = Artifact(name, version)
-        install(artifact, opa_package_path, [repo])
+        install_artifact(artifact, opa_package_path, [repo])
+
+
+def uninstall_package(parsed_args):
+    path = OPA_SITE_PACKAGES + '/' + parsed_args.id
+    if parsed_args.version:
+        path += '/' + parsed_args.version
+    execute_command("rm -rf " + path)
+
 
 def main(args):
     parser = build_arg_parser(args)
     parsed_args = parser.parse_args(args)
     if args[0] == 'install':
-        start_package_install(parsed_args)
+        install_package(parsed_args)
+    elif args[0] == 'uninstall':
+        uninstall_package(parsed_args)
 
 
 if __name__ == '__main__':
+    # 0th argument is the name of this file
     main(sys.argv[1:])
