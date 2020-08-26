@@ -43,10 +43,10 @@ logger = build_logger('opa fetch')
 yaml2Dict = ruamel.yaml.YAML()
 
 OPA_SITE_PACKAGES = "/usr/local/lib/opa/site-packages"
-DEFAULT_REPO = "local-generic-cnp"
+DEFAULT_REPO = "generic-local"
 
 
-# sample path: /artifactory/local-generic-cnp/bnsopa-maestro-policies/0.0.1/bnsopa-maestro-policies-0.0.1.tar.gz
+# sample path: /artifactory/generic-local/bnsopa-maestro-policies/0.0.1/bnsopa-maestro-policies-0.0.1.tar.gz
 
 
 class Artifact:
@@ -56,7 +56,7 @@ class Artifact:
 
     def with_repo(self, repo):
         af_path = "artifactory/" + repo + "/" + self.artifact_path
-        return "https://${ARTIFACTORY_SERVER_HOSTNAME}:${ARTIFACTORY_SERVER_PORT}/%s" % af_path
+        return "https://${ARTIFACTORY_HOST}/%s" % af_path
 
 
 def install_artifacts_from_requirements_file(path_to_dependencies):

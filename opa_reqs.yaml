@@ -1,4 +1,4 @@
 repositories:
-  - local-generic-cnp
+  - generic-local
 requirements:
   bnsopa-maestro-policies: 0.0.1
